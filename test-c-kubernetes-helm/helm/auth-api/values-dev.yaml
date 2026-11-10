@@ -1,0 +1,22 @@
+replicaCount: 1
+image:
+  tag: "v1.2.3"
+env:
+  LOG_LEVEL: "debug"
+  NODE_ENV: "development"
+resources:
+  requests: { cpu: 100m, memory: 128Mi }
+  limits:   { cpu: 250m, memory: 256Mi }
+autoscaling:
+  minReplicas: 1
+  maxReplicas: 3
+pdb:
+  enabled: false           # single replica would block node drains
+  host: auth-api.dev.example.com
+  clusterIssuer: letsencrypt-staging
+  cors:
+    allowOrigin: "https://app.dev.example.com"
+  rateLimitRps: 500
+networkPolicy:
+  rds:         { cidrs: ["10.10.16.0/24"] }
+  elasticache: { cidrs: ["10.10.32.0/24"] }

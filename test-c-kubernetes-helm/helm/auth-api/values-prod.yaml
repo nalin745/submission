@@ -1,0 +1,25 @@
+replicaCount: 3
+image:
+  tag: "v1.2.3"
+env:
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+resources:
+  requests: { cpu: 250m, memory: 256Mi }
+  limits:   { cpu: 500m, memory: 512Mi }
+autoscaling:
+  minReplicas: 3
+  maxReplicas: 20
+pdb:
+  minAvailable: 2
+ingress:
+  host: auth-api.example.com
+  clusterIssuer: acm-pca-issuer
+  cors:
+    allowOrigin: "https://app.example.com"
+secret:
+  create: false 
+  existingSecret: auth-api-secrets
+networkPolicy:
+  rds:         { cidrs: ["10.0.16.0/24"] }
+  elasticache: { cidrs: ["10.0.32.0/24"] }

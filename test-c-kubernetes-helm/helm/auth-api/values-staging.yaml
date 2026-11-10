@@ -1,0 +1,25 @@
+replicaCount: 2
+image:
+  tag: "v1.2.3"
+env:
+  LOG_LEVEL: "info"
+  NODE_ENV: "staging"
+resources:
+  requests: { cpu: 250m, memory: 256Mi }
+  limits:   { cpu: 500m, memory: 512Mi }
+autoscaling:
+  minReplicas: 2
+  maxReplicas: 6
+pdb:
+  minAvailable: 1
+ingress:
+  host: auth-api.staging.example.com
+  clusterIssuer: letsencrypt-staging
+  cors:
+    allowOrigin: "https://app.staging.example.com"
+secret:
+  create: false
+  existingSecret: auth-api-secrets
+networkPolicy:
+  rds:         { cidrs: ["10.20.16.0/24"] }
+  elasticache: { cidrs: ["10.20.32.0/24"] }

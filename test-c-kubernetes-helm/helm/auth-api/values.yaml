@@ -1,0 +1,136 @@
+# Default values (production-leaning). Override per environment with values-<env>.yaml
+
+nameOverride: ""
+fullnameOverride: ""
+
+replicaCount: 3
+
+image:
+  repository: 123456789012.dkr.ecr.us-west-2.amazonaws.com/auth-api
+  tag: "v1.2.3"        
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+
+containerPort: 3000
+
+env:
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+extraEnv: []
+
+appConfig:
+  rateLimit:
+    windowMs: 900000
+    max: 100
+  jwt:
+    expiresIn: "24h"
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+strategy:
+  maxSurge: 1
+  maxUnavailable: 0
+
+terminationGracePeriodSeconds: 30
+preStopSleepSeconds: 10
+
+probes:
+  startup:
+    path: /health/startup
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 30
+  liveness:
+    path: /health/live
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /health/ready
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpread:
+  enabled: true
+  maxSkew: 1
+  topologyKey: topology.kubernetes.io/zone
+  whenUnsatisfiable: ScheduleAnyway
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  host: auth-api.example.com
+  clusterIssuer: acm-pca-issuer      
+  tls:
+    enabled: true
+    secretName: ""                 
+  rateLimitRps: 100
+  rateLimitBurstMultiplier: 3
+  cors:
+    enabled: true
+    allowOrigin: "https://app.example.com"
+    allowMethods: "GET, POST, PUT, DELETE, OPTIONS"
+    allowHeaders: "Authorization, Content-Type, X-Requested-With"
+    allowCredentials: true
+    maxAge: 600
+  annotations: {}                   
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  scaleUpStabilizationSeconds: 60
+  scaleDownStabilizationSeconds: 300
+
+pdb:
+  enabled: true
+  minAvailable: 2
+
+secret:
+  create: true 
+  existingSecret: ""        
+  databaseUrl: "postgresql://user:password@rds-endpoint:5432/authdb"
+  redisUrl: "redis://default:password@elasticache-endpoint:6379"
+
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx
+  dnsNamespace: kube-system
+  dnsPodLabel: { k8s-app: kube-dns }
+  rds:
+    cidrs: ["10.0.16.0/24"]
+    port: 5432
+  elasticache:
+    cidrs: ["10.0.32.0/24"]
+    port: 6379
